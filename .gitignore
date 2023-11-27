@@ -32,4 +32,4 @@
 *.app
 
 # Debug files
-Debug/
+Debug/*
