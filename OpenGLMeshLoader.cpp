@@ -42,6 +42,9 @@ int cameraZoom = 0;
 // Model Variables
 Model_3DS model_house;
 Model_3DS model_tree;
+Model_3DS model_2b;
+Model_3DS model_laser;
+Model_3DS model_shawerma;
 
 // Textures
 GLTexture tex_ground;
@@ -183,18 +186,25 @@ void myDisplay(void)
 	// Draw Ground
 	RenderGround();
 
-	// Draw Tree Model
+	// Draw shawerma Model
 	glPushMatrix();
 	glTranslatef(10, 2, 0);
 	glScalef(0.05, 0.05, 0.05);
-	model_tree.Draw();
+	model_shawerma.Draw();
 	glPopMatrix();
 
-	// Draw house Model
+	// Draw 2b Model
 	glPushMatrix();
 	//glRotatef(90.f, 1, 0, 0);
 	glScalef(0.05, 0.05, 0.05);
-	model_house.Draw();
+	model_2b.Draw();
+	glPopMatrix();
+
+	// Draw laser Model
+	glPushMatrix();
+	glTranslatef(-10, 2, 0);
+	glScalef(0.05, 0.05, 0.05);
+	model_laser.Draw();
 	glPopMatrix();
 
 
@@ -317,8 +327,9 @@ void myReshape(int w, int h)
 void LoadAssets()
 {
 	// Loading Model files
-	model_house.Load("Models/2b-nier-automata/source/2brigged/2bniernew.3DS");
-	model_tree.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
+	model_2b.Load("Models/2b-nier-automata/source/2brigged/2bniernew.3DS");
+	model_shawerma.Load("Models/shawerma/shawerma.3DS");
+	model_laser.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
