@@ -30,8 +30,7 @@ GLdouble laserSpeed = 0.1;
 
 bool moveLaserleft = false;
 
-enum ViewMode { THIRD_PERSON, FIRST_PERSON };
-ViewMode currentView = THIRD_PERSON;
+bool isThirdPerson = true;
 
 class Vector
 {
@@ -135,14 +134,13 @@ public:
 	}
 
 	void changeView(float playerX, float playerY, float playerZ, float playerAngle) {
-		switch (currentView) {
-		case THIRD_PERSON:
+		if (isThirdPerson) {
 			if (playerAngle == 180) {
 				eye = Vector3f(playerX, playerY + 5.0f, playerZ + 2.7f);
-				center = Vector3f(playerX, playerY+2.5f, playerZ - 5.0f);
+				center = Vector3f(playerX, playerY + 2.5f, playerZ - 5.0f);
 			}
 			else if (playerAngle == 90) {
-				eye = Vector3f(playerX - 2.7f, playerY+5.0f , playerZ);
+				eye = Vector3f(playerX - 2.7f, playerY + 5.0f, playerZ);
 				center = Vector3f(playerX + 5.0f, playerY + 2.5f, playerZ);
 			}
 			else if (playerAngle == 0) {
@@ -154,8 +152,8 @@ public:
 				center = Vector3f(playerX - 5.0f, playerY + 2.5f, playerZ);
 			}
 			up = Vector3f(0.0f, 1.0f, 0.0f);
-			break;
-		case FIRST_PERSON:
+		}
+		else {
 			eye = Vector3f(playerX, playerY + 5.0f, playerZ);
 			if (playerAngle == 180) {
 				//center = Vector3f(playerX, playerY + 2.5f, playerZ - 5.0f);
@@ -178,7 +176,6 @@ public:
 
 			}
 			up = Vector3f(0.0f, 1.0f, 0.0f);
-			break;
 		}
 	}
 
@@ -203,11 +200,12 @@ float playerAngle = 0;
 void setupCamera() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60, 640 / 480, 0.001, 100);
+	gluPerspective(60, 640 / 480, zNear, zFar);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	camera.look();
+	camera.changeView(playerX, playerY, playerZ, playerAngle);
 }
 
 
@@ -483,14 +481,14 @@ void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case 's':
 		playerAngle = 180;
-		if (playerZ > 0) {
+		if (playerZ > -10) {
 			playerZ -= 0.2;
 		}
 		break;
 	case 'd':
 		playerAngle = -90;
-		if (playerX > 0.1) {
-			playerX -= 0.02;
+		if (playerX > -10) {
+			playerX -= 0.2;
 		}
 		break;
 	case 'w':
@@ -501,15 +499,9 @@ void Keyboard(unsigned char key, int x, int y) {
 		break;
 	case 'a':
 		playerAngle = 90;
-		if (playerX < 0.9) {
-			playerX += 0.02;
+		if (playerX < 10) {
+			playerX += 0.2;
 		}
-		break;
-	case '1':
-		currentView = THIRD_PERSON;
-		break;
-	case '2':
-		currentView = FIRST_PERSON;
 		break;
 	case GLUT_KEY_ESCAPE:
 		exit(EXIT_SUCCESS);
@@ -520,46 +512,11 @@ void Keyboard(unsigned char key, int x, int y) {
 	glutPostRedisplay();
 }
 
-//=======================================================================
-// Motion Function
-//=======================================================================
-void myMotion(int x, int y)
-{
-	y = HEIGHT - y;
-
-	if (cameraZoom - y > 0)
-	{
-		Eye.x += -0.1;
-		Eye.z += -0.1;
-	}
-	else
-	{
-		Eye.x += 0.1;
-		Eye.z += 0.1;
-	}
-
-	cameraZoom = y;
-
-	glLoadIdentity();	//Clear Model_View Matrix
-
-	gluLookAt(Eye.x, Eye.y, Eye.z, At.x, At.y, At.z, Up.x, Up.y, Up.z);	//Setup Camera with modified paramters
-
-	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-	glutPostRedisplay();	//Re-draw scene 
-}
-
-//=======================================================================
-// Mouse Function
-//=======================================================================
-void myMouse(int button, int state, int x, int y)
-{
-	y = HEIGHT - y;
-
-	if (state == GLUT_DOWN)
-	{
-		cameraZoom = y;
+void Mouse(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		isThirdPerson = !isThirdPerson;
+		camera.changeView(playerX, playerY, playerZ, playerAngle);
+		glutPostRedisplay();
 	}
 }
 
@@ -653,7 +610,7 @@ void main(int argc, char** argv)
 
 	glutIdleFunc(anim);
 
-	glutMouseFunc(myMouse);
+	glutMouseFunc(Mouse);
 
 	//glutReshapeFunc(myReshape);
 
