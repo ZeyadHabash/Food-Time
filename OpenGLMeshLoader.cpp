@@ -1,10 +1,15 @@
 #include "TextureBuilder.h"
 #include "Model_3DS.h"
 #include "GLTexture.h"
-#include "glut.h"
+#include <math.h>
+#include <glut.h>
+#define GLUT_KEY_ESCAPE 27
+#define DEG2RAD(a) (a * 0.0174532925)
 
-int WIDTH = 1280;
-int HEIGHT = 720;
+int WIDTH = 640;
+int HEIGHT = 480;
+
+
 
 GLuint tex;
 char title[] = "3D Model Loader Sample";
@@ -24,6 +29,9 @@ GLdouble laserColour[] = { 0.0f, 1.0f, 0.0f };
 GLdouble laserSpeed = 0.1;
 
 bool moveLaserleft = false;
+
+enum ViewMode { THIRD_PERSON, FIRST_PERSON };
+ViewMode currentView = THIRD_PERSON;
 
 class Vector
 {
@@ -46,6 +54,162 @@ public:
 Vector Eye(20, 5, 20);
 Vector At(0, 0, 0);
 Vector Up(0, 1, 0);
+
+
+class Vector3f {
+public:
+	float x, y, z;
+
+	Vector3f(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) {
+		x = _x;
+		y = _y;
+		z = _z;
+	}
+
+	Vector3f operator+(const Vector3f& v) const {
+		return Vector3f(x + v.x, y + v.y, z + v.z);
+	}
+
+	Vector3f operator-(const Vector3f& v) const {
+		return Vector3f(x - v.x, y - v.y, z - v.z);
+	}
+
+	Vector3f operator*(const float n) const {
+		return Vector3f(x * n, y * n, z * n);
+	}
+
+	Vector3f operator/(const float n) const {
+		return Vector3f(x / n, y / n, z / n);
+	}
+
+	Vector3f unit() {
+		return *this / sqrt(x * x + y * y + z * z);
+	}
+
+	Vector3f cross(Vector3f v) {
+		return Vector3f(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
+	}
+};
+
+
+class Camera {
+public:
+	Vector3f eye, center, up;
+	Camera(float eyeX = 1.0f, float eyeY = 6.0f, float eyeZ = 4.0f, float centerX = 0.0f, float centerY = 0.0f, float centerZ = 0.0f, float upX = 0.0f, float upY = 1.0f, float upZ = 0.0f) {
+		eye = Vector3f(eyeX, eyeY, eyeZ);
+		center = Vector3f(centerX, centerY, centerZ);
+		up = Vector3f(upX, upY, upZ);
+	}
+
+	void moveX(float d) {
+		Vector3f right = up.cross(center - eye).unit();
+		eye = eye + right * d;
+		center = center + right * d;
+	}
+
+	void moveY(float d) {
+		eye = eye + up.unit() * d;
+		center = center + up.unit() * d;
+	}
+
+	void moveZ(float d) {
+		Vector3f view = (center - eye).unit();
+		eye = eye + view * d;
+		center = center + view * d;
+	}
+
+	void rotateX(float a) {
+		Vector3f view = (center - eye).unit();
+		Vector3f right = up.cross(view).unit();
+		view = view * cos(DEG2RAD(a)) + up * sin(DEG2RAD(a));
+		up = view.cross(right);
+		center = eye + view;
+	}
+
+	void rotateY(float a) {
+		Vector3f view = (center - eye).unit();
+		Vector3f right = up.cross(view).unit();
+		view = view * cos(DEG2RAD(a)) + right * sin(DEG2RAD(a));
+		right = view.cross(up);
+		center = eye + view;
+	}
+
+	void changeView(float playerX, float playerY, float playerZ, float playerAngle) {
+		switch (currentView) {
+		case THIRD_PERSON:
+			if (playerAngle == 180) {
+				eye = Vector3f(playerX, playerY + 5.0f, playerZ + 2.7f);
+				center = Vector3f(playerX, playerY+2.5f, playerZ - 5.0f);
+			}
+			else if (playerAngle == 90) {
+				eye = Vector3f(playerX - 2.7f, playerY+5.0f , playerZ);
+				center = Vector3f(playerX + 5.0f, playerY + 2.5f, playerZ);
+			}
+			else if (playerAngle == 0) {
+				eye = Vector3f(playerX, playerY + 5.0f, playerZ - 2.7f);
+				center = Vector3f(playerX, playerY + 2.5f, playerZ + 5.0f);
+			}
+			else if (playerAngle == -90) {
+				eye = Vector3f(playerX + 2.7f, playerY + 5.0f, playerZ);
+				center = Vector3f(playerX - 5.0f, playerY + 2.5f, playerZ);
+			}
+			up = Vector3f(0.0f, 1.0f, 0.0f);
+			break;
+		case FIRST_PERSON:
+			eye = Vector3f(playerX, playerY + 5.0f, playerZ);
+			if (playerAngle == 180) {
+				//center = Vector3f(playerX, playerY + 2.5f, playerZ - 5.0f);
+				center = Vector3f(playerX, playerY + 2.5f, playerZ - 5.0f);
+
+			}
+			else if (playerAngle == 90) {
+				//center = Vector3f(playerX + 2.0f, playerY + 4.5f, playerZ);
+				center = Vector3f(playerX + 5.0f, playerY + 2.5f, playerZ);
+
+			}
+			else if (playerAngle == 0) {
+				//center = Vector3f(playerX, playerY + 2.5f, playerZ + 5.0f);
+				center = Vector3f(playerX, playerY + 2.5f, playerZ + 5.0f);
+
+			}
+			else if (playerAngle == -90) {
+				//center = Vector3f(playerX - 2.0f, playerY + 4.5f, playerZ);
+				center = Vector3f(playerX - 5.0f, playerY + 2.5f, playerZ);
+
+			}
+			up = Vector3f(0.0f, 1.0f, 0.0f);
+			break;
+		}
+	}
+
+	void look() {
+		gluLookAt(
+			eye.x, eye.y, eye.z,
+			center.x, center.y, center.z,
+			up.x, up.y, up.z
+		);
+	}
+
+};
+
+
+
+Camera camera;
+float playerX = 0.0;
+float playerY = 0.15;
+float playerZ = 0.0;
+float playerAngle = 0;
+
+void setupCamera() {
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, 640 / 480, 0.001, 100);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	camera.look();
+}
+
 
 int cameraZoom = 0;
 
@@ -233,8 +397,9 @@ void drawLaser()
 //=======================================================================
 // Display Function
 //=======================================================================
-void myDisplay(void)
+void Display(void)
 {
+	setupCamera();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -258,7 +423,8 @@ void myDisplay(void)
 	// Draw 2b Model
 	glPushMatrix();
 	//glRotatef(90.f, 1, 0, 0);
-	glTranslatef(-10, 2, 0);
+	glTranslatef(playerX, playerY, playerZ);
+	glRotatef(playerAngle, 0, 1, 0);
 	glScalef(0.05, 0.05, 0.05);
 	model_2b.Draw();
 	glPopMatrix();
@@ -286,28 +452,71 @@ void myDisplay(void)
 
 
 	glutSwapBuffers();
+	glFlush();
 }
 
 //=======================================================================
 // Keyboard Function
 //=======================================================================
-void myKeyboard(unsigned char button, int x, int y)
-{
-	switch (button)
-	{
+//void myKeyboard(unsigned char button, int x, int y)
+//{
+//	switch (button)
+//	{
+//	case 'w':
+//		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//		break;
+//	case 'r':
+//		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//		break;
+//	case 27:
+//		exit(0);
+//		break;
+//	default:
+//		break;
+//	}
+//
+//	glutPostRedisplay();
+//}
+
+void Keyboard(unsigned char key, int x, int y) {
+
+	switch (key) {
+	case 's':
+		playerAngle = 180;
+		if (playerZ > 0) {
+			playerZ -= 0.2;
+		}
+		break;
+	case 'd':
+		playerAngle = -90;
+		if (playerX > 0.1) {
+			playerX -= 0.02;
+		}
+		break;
 	case 'w':
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		playerAngle = 0;
+		if (playerZ < 10) {
+			playerZ += 0.2;
+		}
 		break;
-	case 'r':
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	case 'a':
+		playerAngle = 90;
+		if (playerX < 0.9) {
+			playerX += 0.02;
+		}
 		break;
-	case 27:
-		exit(0);
+	case '1':
+		currentView = THIRD_PERSON;
 		break;
-	default:
+	case '2':
+		currentView = FIRST_PERSON;
+		break;
+	case GLUT_KEY_ESCAPE:
+		exit(EXIT_SUCCESS);
 		break;
 	}
-
+	camera.changeView(playerX, playerY, playerZ, playerAngle);
+	// checkCollision(); method to check for collisions with collectables/borders
 	glutPostRedisplay();
 }
 
@@ -423,9 +632,13 @@ void anim()
 //=======================================================================
 void main(int argc, char** argv)
 {
+
+	
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+
+	//glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
 
 	glutInitWindowSize(WIDTH, HEIGHT);
 
@@ -433,17 +646,16 @@ void main(int argc, char** argv)
 
 	glutCreateWindow(title);
 
-	glutDisplayFunc(myDisplay);
+	glutDisplayFunc(Display);
 
-	glutKeyboardFunc(myKeyboard);
-
-	glutMotionFunc(myMotion);
+	glutKeyboardFunc(Keyboard);
+	//glutMotionFunc(myMotion);
 
 	glutIdleFunc(anim);
 
 	glutMouseFunc(myMouse);
 
-	glutReshapeFunc(myReshape);
+	//glutReshapeFunc(myReshape);
 
 	myInit();
 
