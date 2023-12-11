@@ -1,10 +1,7 @@
 #include "TextureBuilder.h"
 #include "Model_3DS.h"
 #include "GLTexture.h"
-#include "glut.h"
-#include <math.h>
-#define GLUT_KEY_ESCAPE 27
-#define DEG2RAD(a) (a * 0.0174532925)
+#include <glut.h>
 
 
 int WIDTH = 640;
@@ -19,7 +16,17 @@ char title[] = "3D Model Loader Sample";
 GLdouble fovy = 45.0;
 GLdouble aspectRatio = (GLdouble)WIDTH / (GLdouble)HEIGHT;
 GLdouble zNear = 0.1;
-GLdouble zFar = 100;
+GLdouble zFar = 500;
+
+GLdouble laserPositionX = 0, laserPositionY = 2, laserPositionZ = 0;
+GLdouble laserOffsetX = -1, laserOffsetY = 0, laserOffsetZ = 0;
+GLdouble laserCutoff = 30;
+GLdouble laserExponent = 100;
+GLdouble laserDirectionX = 1, laserDirectionY = 0, laserDirectionZ = 0;
+GLdouble laserColour[] = { 0.0f, 1.0f, 0.0f };
+GLdouble laserSpeed = 0.1;
+
+bool moveLaserleft = false;
 
 enum ViewMode { THIRD_PERSON, FIRST_PERSON };
 ViewMode currentView = THIRD_PERSON;
@@ -231,7 +238,7 @@ void InitLightSource()
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 
 	// Define Light source 0 diffuse light
-	GLfloat diffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	GLfloat diffuse[] = { 0.7, 0.7, 0.7, 1.0f };
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
 
 	// Define Light source 0 Specular light
@@ -239,8 +246,45 @@ void InitLightSource()
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
 	// Finally, define light source 0 position in World Space
-	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
+	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 0.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+
+
+
+
+
+	// Laser light source (Spotlight)
+	glEnable(GL_LIGHT1);
+
+	GLfloat ambient1[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // Minimal ambient light
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient1);
+
+	GLfloat diffuse1[] = { laserColour[0] *10 , laserColour[1] *10 , laserColour[2] * 10, 1.0f}; // laser colour
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
+
+	GLfloat specular1[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // White specular light
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
+
+	GLfloat light_position1[] = { laserPositionX + laserOffsetX, laserPositionY + laserOffsetY, laserPositionZ + laserOffsetZ, 1.0f };
+	glLightfv(GL_LIGHT1, GL_POSITION, light_position1);
+
+	GLfloat light_direction1[] = { laserDirectionX, laserDirectionY, laserDirectionZ };
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_direction1);
+
+	// Set the cutoff angle for the spotlight
+	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, laserCutoff);
+
+	// Set the exponent to control the spotlight falloff
+	glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, laserExponent);
+
+	GLfloat constantAttenuation = 1.0f;
+	GLfloat linearAttenuation = 0.1f;
+	GLfloat quadraticAttenuation = 0.01f;
+
+	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, constantAttenuation);
+	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, linearAttenuation);
+	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
 }
 
 //=======================================================================
@@ -334,6 +378,20 @@ void RenderGround()
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
 
+void drawLaser()
+{
+	glPushMatrix();
+	glPushAttrib(GL_CURRENT_BIT); // Save the current color state
+	// Enable color material
+	glColor3f(laserColour[0], laserColour[1], laserColour[2]);
+	glTranslatef(laserPositionX, laserPositionY, laserPositionZ);
+	glScalef(0.05, 0.05, 0.05);
+	model_laser.Draw();
+	glPopAttrib(); // Restore the color state
+	glPopMatrix();
+}
+
+
 //=======================================================================
 // Display Function
 //=======================================================================
@@ -344,10 +402,11 @@ void Display(void)
 
 
 
-	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
-	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
+	//GLfloat lightIntensity[] = { 0.2, 0.05, 0.05, 1.0f };
+	//GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
+	//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+	//glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
+	InitLightSource();
 
 	// Draw Ground
 	RenderGround();
@@ -369,11 +428,7 @@ void Display(void)
 	glPopMatrix();
 
 	// Draw laser Model
-	glPushMatrix();
-	glTranslatef(-10, 2, 0);
-	glScalef(0.05, 0.05, 0.05);
-	model_laser.Draw();
-	glPopMatrix();
+	drawLaser();
 
 
 	//sky box
@@ -547,6 +602,29 @@ void LoadAssets()
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 }
 
+void anim()
+{
+	if (moveLaserleft)
+	{
+		laserPositionX += 0.01;
+	}
+	else
+	{
+		laserPositionX -= 0.01;	
+	}
+
+	if (laserPositionX >= 10 || laserPositionX <= -10)
+	{
+		moveLaserleft = !moveLaserleft;
+		float temp = laserColour[0];
+		laserColour[0] = laserColour[1];
+		laserColour[1] = laserColour[2];
+		laserColour[2] = temp;
+	}
+
+	glutPostRedisplay();
+}
+
 //=======================================================================
 // Main Function
 //=======================================================================
@@ -571,18 +649,20 @@ void main(int argc, char** argv)
 	glutKeyboardFunc(Keyboard);
 	//glutMotionFunc(myMotion);
 
-	//glutMouseFunc(myMouse);
+	glutIdleFunc(anim);
+
+	glutMouseFunc(myMouse);
 
 	//glutReshapeFunc(myReshape);
 
 	myInit();
 
 	LoadAssets();
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_NORMALIZE);
-	glEnable(GL_COLOR_MATERIAL);
+	//glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHT0);
+	//glEnable(GL_NORMALIZE);
+	//glEnable(GL_COLOR_MATERIAL);
 
 	glShadeModel(GL_SMOOTH);
 
