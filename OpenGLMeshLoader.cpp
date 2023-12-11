@@ -391,7 +391,7 @@ void LoadAssets()
 	model_laser.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
 
 	// Loading texture files
-	tex_ground.Load("Textures/ground.bmp");
+	tex_ground.Load("Textures/futurefloor.bmp");
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 }
 
