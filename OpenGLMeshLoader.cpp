@@ -1,7 +1,7 @@
 #include "TextureBuilder.h"
 #include "Model_3DS.h"
 #include "GLTexture.h"
-#include <glut.h>
+#include "glut.h"
 
 int WIDTH = 1280;
 int HEIGHT = 720;
