@@ -32,6 +32,8 @@ bool moveLaserleft = false;
 
 bool isThirdPerson = true;
 
+bool scene2 = false; // to check if we are in scene 2 or not
+
 class Vector
 {
 public:
@@ -220,6 +222,8 @@ Model_3DS model_shawerma;
 
 // Textures
 GLTexture tex_ground;
+GLTexture tex_futurefloor;
+GLTexture tex_sand;
 
 //=======================================================================
 // Lighting Configuration Function
@@ -357,7 +361,15 @@ void RenderGround()
 
 	glEnable(GL_TEXTURE_2D);	// Enable 2D texturing
 
-	glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);	// Bind the ground texture
+
+	//glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);	// Bind the ground texture
+
+	if (scene2) {
+		glBindTexture(GL_TEXTURE_2D, tex_sand.texture[0]);	// Bind the ground texture
+	}
+	else {
+		glBindTexture(GL_TEXTURE_2D, tex_futurefloor.texture[0]);	// Bind the ground texture
+	}
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
@@ -453,28 +465,6 @@ void Display(void)
 	glFlush();
 }
 
-//=======================================================================
-// Keyboard Function
-//=======================================================================
-//void myKeyboard(unsigned char button, int x, int y)
-//{
-//	switch (button)
-//	{
-//	case 'w':
-//		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-//		break;
-//	case 'r':
-//		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//		break;
-//	case 27:
-//		exit(0);
-//		break;
-//	default:
-//		break;
-//	}
-//
-//	glutPostRedisplay();
-//}
 
 void Keyboard(unsigned char key, int x, int y) {
 
@@ -518,6 +508,9 @@ void Mouse(int button, int state, int x, int y) {
 		camera.changeView(playerX, playerY, playerZ, playerAngle);
 		glutPostRedisplay();
 	}
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+		scene2 = !scene2;
+	}
 }
 
 //=======================================================================
@@ -557,7 +550,9 @@ void LoadAssets()
 	model_laser.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
 
 	// Loading texture files
-	tex_ground.Load("Textures/futurefloor.bmp");
+	tex_ground.Load("Textures/ground.bmp");
+	tex_futurefloor.Load("Textures/futurefloor.bmp");
+	tex_sand.Load("Textures/sand.bmp");
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 }
 
