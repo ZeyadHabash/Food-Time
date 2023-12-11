@@ -1,8 +1,10 @@
 #include "TextureBuilder.h"
 #include "Model_3DS.h"
 #include "GLTexture.h"
+#include <math.h>
 #include <glut.h>
-
+#define GLUT_KEY_ESCAPE 27
+#define DEG2RAD(a) (a * 0.0174532925)
 
 int WIDTH = 640;
 int HEIGHT = 480;
