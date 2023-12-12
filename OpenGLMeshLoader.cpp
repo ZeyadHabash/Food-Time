@@ -265,6 +265,14 @@ void InitLightSource()
 
 	// Define Light source 0 ambient light
 	GLfloat ambient[] = { 0.1f, 0.1f, 0.1, 1.0f };
+
+	if(scene2)
+	{
+		ambient[0] = 0.5;
+		ambient[1] = 0.5;
+		ambient[2] = 0.5;
+	}
+	
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 
 	// Define Light source 0 diffuse light
@@ -724,9 +732,6 @@ void Keyboard(unsigned char key, int x, int y) {
 	}
 	camera.changeView(playerX, playerY, playerZ, playerAngle);
 
-	//cout << "playerX" << playerX << endl;
-	//cout << "playerY" << playerY << endl;
-	//cout << "playerZ" << playerZ << endl;
 
 	//method to check for collisions with collectables/borders
 	checkCollision(); 
@@ -830,7 +835,6 @@ void anim()
 			else
 				playerAngle += 0.3;
 			elapsedTime += 0.01;
-			cout << "time" << elapsedTime << endl;
 		}
 		else if ((elapsedTime > animationDuration))
 		{
