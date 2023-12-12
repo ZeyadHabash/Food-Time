@@ -536,21 +536,6 @@ void drawLaser(GLdouble laserPositionX, GLdouble laserPositionY, GLdouble laserP
 	glPopMatrix();
 }
 
-void drawFutureWall(float x, float y, float z) {
-	glPushMatrix();
-	glTranslatef(x, y, z);
-	glScalef(0.5, 0.05, 0.05);
-	model_futureWall.Draw();
-	glPopMatrix();
-}
-
-void drawAllWalls() {
-		drawFutureWall(20, -3.5, 16);
-		//drawFutureWall(-17,0,0);
-		//drawFutureWall(0,0,17);
-		//drawFutureWall(0,0,-17);
-}
-
 
 void drawStopwatch(float x, float y, float z, int flag) {
 	if (flag == 0)
@@ -615,9 +600,6 @@ void DisplayScene1(void) {
 	for (int i = 0; i < 4; i++) {
 		drawStopwatch(stopwatchX[i], stopwatchY[i], stopwatchZ[i], stopwatchFlag[i]);
 	}
-
-	//draw walls
-	drawAllWalls();
 
 	//sky box
 	glPushMatrix();
