@@ -3,14 +3,24 @@
 #include "GLTexture.h"
 #include <math.h>
 #include <glut.h>
+#include <iostream>
+#include <stdlib.h>
+#include <Windows.h>
+#include <stdio.h>
+using namespace std;
 #define GLUT_KEY_ESCAPE 27
 #define DEG2RAD(a) (a * 0.0174532925)
 
 int WIDTH = 640;
 int HEIGHT = 480;
 
+int timer = 3;
+int score = 0;
 
+float elapsedTime = 0.0f;
 
+bool rise = true;
+bool transition = false;
 GLuint tex;
 char title[] = "3D Model Loader Sample";
 
@@ -20,7 +30,9 @@ GLdouble aspectRatio = (GLdouble)WIDTH / (GLdouble)HEIGHT;
 GLdouble zNear = 0.1;
 GLdouble zFar = 500;
 
-GLdouble laserPositionX = 0, laserPositionY = 2, laserPositionZ = 0;
+GLdouble laserPositionX = 0, laserPositionY = 2, laserPositionZ = 8;
+GLdouble laserPositionX2 = 0, laserPositionY2 = 2, laserPositionZ2 = -6;
+
 GLdouble laserOffsetX = -1, laserOffsetY = 0, laserOffsetZ = 0;
 GLdouble laserCutoff = 30;
 GLdouble laserExponent = 100;
@@ -28,6 +40,19 @@ GLdouble laserDirectionX = 1, laserDirectionY = 0, laserDirectionZ = 0;
 GLdouble laserColour[] = { 0.0f, 1.0f, 0.0f };
 GLdouble laserSpeed = 0.1;
 
+
+
+
+float stopwatchX[4] = {-3, 4, 3, -3};
+float stopwatchY [4] = {3, 3, 3, 3};
+float stopwatchZ [4] = {5, 9, -5, -7};
+int stopwatchFlag[4] = {1, 1, 1, 1};
+
+
+
+GLdouble stopwatchAng = 0;
+
+GLdouble timeMachineAng = 0;
 bool moveLaserleft = false;
 
 bool isThirdPerson = true;
@@ -219,7 +244,8 @@ Model_3DS model_tree;
 Model_3DS model_2b;
 Model_3DS model_laser;
 Model_3DS model_shawerma;
-
+Model_3DS model_timeMachine;
+Model_3DS model_stopwatch;
 // Textures
 GLTexture tex_ground;
 GLTexture tex_futurefloor;
@@ -289,6 +315,38 @@ void InitLightSource()
 	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, constantAttenuation);
 	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, linearAttenuation);
 	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+
+
+
+
+	glEnable(GL_LIGHT2);
+
+	glLightfv(GL_LIGHT2, GL_AMBIENT, ambient1);
+
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuse1);
+
+	glLightfv(GL_LIGHT2, GL_SPECULAR, specular1);
+
+	GLfloat light_position2[] = { laserPositionX2 + laserOffsetX, laserPositionY2 + laserOffsetY, laserPositionZ2 + laserOffsetZ, 1.0f };
+	glLightfv(GL_LIGHT2, GL_POSITION, light_position2);
+
+	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light_direction1);
+
+	// Set the cutoff angle for the spotlight
+	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, laserCutoff);
+
+	// Set the exponent to control the spotlight falloff
+	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, laserExponent);
+
+	
+
+	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, constantAttenuation);
+	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, linearAttenuation);
+	glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+
+
+
+
 }
 
 //=======================================================================
@@ -390,27 +448,180 @@ void RenderGround()
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
 
-void drawLaser()
+
+//if flag = 1, we add to the score --> collectables collision
+// otherwise, we deduct from score --> obstacle collision
+//otherwise deduct 
+
+
+
+
+void checkCollision() {
+
+	//collision with the stopwatch 
+	for (int i = 0; i < 4; i++) {
+		if (playerX >= stopwatchX[i] - 0.5 && playerX <= stopwatchX[i] + 0.5 &&
+			playerZ >= stopwatchZ[i] - 0.5 && playerZ <= stopwatchZ[i] + 0.5)
+			if (stopwatchFlag[i] == 1) {
+				score += 10;
+				stopwatchFlag[i] = 0;
+				PlaySound(TEXT("stopwatch.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			}
+	}
+
+	//collisions with laser beam 
+	if (playerX <= laserPositionX + 8 && playerX >= laserPositionX - 8)
+	{
+		if ((playerZ <= laserPositionZ + 0.5 && playerZ >= laserPositionZ - 0.5)
+			|| (playerZ <= laserPositionZ2 + 0.5 && playerZ >= laserPositionZ2 - 0.5))
+		{
+			if (score >= 5)
+				score -= 5;
+
+			PlaySound(TEXT("laser.wav"), NULL, SND_FILENAME | SND_ASYNC);
+
+			if (playerAngle == 0)
+				playerZ -= 0.2;
+			else
+				playerZ += 0.2;
+
+		}
+
+	}
+	//collision with timemachine
+	if (playerZ >= 12.5 && playerX <= -5.2 && playerX >= -10.5) {
+		if (!scene2) {
+			PlaySound(TEXT("timemachine.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			transition = true;
+		}
+	}
+}
+
+void print(float x, float y, float z,  char* string)
+{
+	int len, i;
+
+	//set the position of the text in the window using the x and y coordinates
+	glRasterPos3f(x, y, z);
+
+	//get the length of the string to display
+	len = (int)strlen(string);
+
+	//loop to display character by character
+	for (i = 0; i < len; i++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, string[i]);
+	}
+}
+void drawLaser(GLdouble laserPositionX, GLdouble laserPositionY, GLdouble laserPositionZ)
 {
 	glPushMatrix();
 	glPushAttrib(GL_CURRENT_BIT); // Save the current color state
 	// Enable color material
 	glColor3f(laserColour[0], laserColour[1], laserColour[2]);
 	glTranslatef(laserPositionX, laserPositionY, laserPositionZ);
-	glScalef(0.05, 0.05, 0.05);
+	glScalef(0.1, 0.05, 0.05);
 	model_laser.Draw();
 	glPopAttrib(); // Restore the color state
 	glPopMatrix();
 }
 
 
-//=======================================================================
-// Display Function
-//=======================================================================
-void Display(void)
-{
+void drawStopwatch(float x, float y, float z, int flag) {
+	if (flag == 0)
+		return;
+	
+		glPushMatrix();
+		glTranslatef(x, y, z);
+		glRotatef(stopwatchAng, 0, 1, 0);
+		glScalef(0.02, 0.02, 0.02);
+		model_stopwatch.Draw();
+		glPopMatrix();
+	
+
+}
+
+
+void drawTimemachine() {
+	glPushMatrix();
+	glTranslatef(-8, 0.5, 16);
+	glRotatef(timeMachineAng, 0, 1, 0);
+	glScalef(0.02, 0.02, 0.02);
+	model_timeMachine.Draw();
+	glPopMatrix();
+
+}
+void DisplayScene1(void) {
 	setupCamera();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
+
+	//GLfloat lightIntensity[] = { 0.2, 0.05, 0.05, 1.0f };
+	//GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
+	//glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+	//glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
+	InitLightSource();
+
+	// Draw Ground
+	RenderGround();
+
+
+	// Draw 2b Model
+	glPushMatrix();
+	glTranslatef(playerX, playerY, playerZ);
+	glRotatef(playerAngle, 0, 1, 0);
+	glScalef(0.05, 0.05, 0.05);
+	model_2b.Draw();
+	glPopMatrix();
+
+	// Draw laser Model
+	drawLaser(laserPositionX, laserPositionY, laserPositionZ);
+	drawLaser(laserPositionX2, laserPositionY2, laserPositionZ2);
+
+
+	//Draw timeMachine model
+	drawTimemachine();
+
+
+
+	//draw stopwatches	
+	for (int i = 0; i < 4; i++) {
+		drawStopwatch(stopwatchX[i], stopwatchY[i], stopwatchZ[i], stopwatchFlag[i]);
+	}
+
+	//sky box
+	glPushMatrix();
+
+	GLUquadricObj* qobj;
+	qobj = gluNewQuadric();
+	glTranslated(50, 0, 0);
+	glRotated(90, 1, 0, 1);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	gluQuadricTexture(qobj, true);
+	gluQuadricNormals(qobj, GL_SMOOTH);
+	gluSphere(qobj, 100, 100, 100);
+	gluDeleteQuadric(qobj);
+
+
+	glPopMatrix();
+
+
+	//score of the game
+	glColor3f(1, 1, 1);
+	char* p0s[20];
+	sprintf((char*)p0s, "Score: %d", score);
+	print(playerX, 5.6, playerZ, (char*)p0s);
+
+	glutSwapBuffers();
+	glFlush();
+}
+
+void DisplayScene2(void) {
+	setupCamera();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 
 
@@ -432,15 +643,13 @@ void Display(void)
 
 	// Draw 2b Model
 	glPushMatrix();
-	//glRotatef(90.f, 1, 0, 0);
 	glTranslatef(playerX, playerY, playerZ);
 	glRotatef(playerAngle, 0, 1, 0);
 	glScalef(0.05, 0.05, 0.05);
 	model_2b.Draw();
 	glPopMatrix();
 
-	// Draw laser Model
-	drawLaser();
+
 
 
 	//sky box
@@ -456,13 +665,29 @@ void Display(void)
 	gluSphere(qobj, 100, 100, 100);
 	gluDeleteQuadric(qobj);
 
-
 	glPopMatrix();
 
 
+	//score of the game
+	glColor3f(1, 1, 1);
+	char* p0s[20];
+	sprintf((char*)p0s, "Score: %d", score);
+	print(playerX, 5.6, playerZ, (char*)p0s);
 
 	glutSwapBuffers();
 	glFlush();
+}
+
+//=======================================================================
+// Display Function
+//=======================================================================
+void Display(void)
+{
+	if (!scene2)
+		DisplayScene1();
+	else
+		DisplayScene2();
+	
 }
 
 
@@ -471,25 +696,25 @@ void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case 's':
 		playerAngle = 180;
-		if (playerZ > -10) {
+		if (playerZ > -17) {
 			playerZ -= 0.2;
 		}
 		break;
 	case 'd':
 		playerAngle = -90;
-		if (playerX > -10) {
+		if (playerX > -17) {
 			playerX -= 0.2;
 		}
 		break;
 	case 'w':
 		playerAngle = 0;
-		if (playerZ < 10) {
+		if (playerZ < 17) {
 			playerZ += 0.2;
 		}
 		break;
 	case 'a':
 		playerAngle = 90;
-		if (playerX < 10) {
+		if (playerX < 17) {
 			playerX += 0.2;
 		}
 		break;
@@ -498,7 +723,13 @@ void Keyboard(unsigned char key, int x, int y) {
 		break;
 	}
 	camera.changeView(playerX, playerY, playerZ, playerAngle);
-	// checkCollision(); method to check for collisions with collectables/borders
+
+	//cout << "playerX" << playerX << endl;
+	//cout << "playerY" << playerY << endl;
+	//cout << "playerZ" << playerZ << endl;
+
+	//method to check for collisions with collectables/borders
+	checkCollision(); 
 	glutPostRedisplay();
 }
 
@@ -548,7 +779,8 @@ void LoadAssets()
 	model_2b.Load("Models/2b-nier-automata/source/2brigged/2bniernew.3DS");
 	model_shawerma.Load("Models/shawerma/shawerma.3DS");
 	model_laser.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
-
+	model_timeMachine.Load("Models/timeMachine/timeMachine.3ds");
+	model_stopwatch.Load("Models/stopwatch/watch.3ds");
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
 	tex_futurefloor.Load("Textures/futurefloor.bmp");
@@ -558,22 +790,63 @@ void LoadAssets()
 
 void anim()
 {
-	if (moveLaserleft)
+	if(!scene2)
+	//laser animation
 	{
-		laserPositionX += 0.01;
-	}
-	else
-	{
-		laserPositionX -= 0.01;	
-	}
+		if (moveLaserleft)
+		{
+			laserPositionX += 0.01;
+			laserPositionX2 += 0.01;
 
-	if (laserPositionX >= 10 || laserPositionX <= -10)
-	{
-		moveLaserleft = !moveLaserleft;
-		float temp = laserColour[0];
-		laserColour[0] = laserColour[1];
-		laserColour[1] = laserColour[2];
-		laserColour[2] = temp;
+		}
+		else
+		{
+			laserPositionX -= 0.01;
+			laserPositionX2 -= 0.01;
+
+		}
+
+		if (laserPositionX >= 10 || laserPositionX <= -10)
+		{
+			moveLaserleft = !moveLaserleft;
+			float temp = laserColour[0];
+			laserColour[0] = laserColour[1];
+			laserColour[1] = laserColour[2];
+			laserColour[2] = temp;
+		}
+
+
+		//ttansition animation
+		float animationDuration = 40.0f;
+		if (transition && (elapsedTime < animationDuration)) {
+			if (rise)
+			{
+				playerY += 0.05;
+				elapsedTime += 0.01;
+
+				if (playerY > 6)
+					rise = false;
+			}
+			else
+				playerAngle += 0.3;
+			elapsedTime += 0.01;
+			cout << "time" << elapsedTime << endl;
+		}
+		else if ((elapsedTime > animationDuration))
+		{
+			playerX = 0.0;
+			playerY = 0.15;
+			playerZ = 0.0;
+			playerAngle = 0;
+			scene2 = true;
+
+		}
+
+		//stopwatch animation
+		stopwatchAng += 0.1;
+
+		//timemachine animation
+		timeMachineAng += 0.1;
 	}
 
 	glutPostRedisplay();
@@ -608,6 +881,7 @@ void main(int argc, char** argv)
 	glutMouseFunc(Mouse);
 
 	//glutReshapeFunc(myReshape);
+
 
 	myInit();
 
