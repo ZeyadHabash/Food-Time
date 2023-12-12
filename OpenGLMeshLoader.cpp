@@ -220,7 +220,7 @@ public:
 
 Camera camera;
 float playerX = 0.0;
-float playerY = 0.15;
+float playerY = 0.0;
 float playerZ = 0.0;
 float playerAngle = 0;
 
@@ -244,8 +244,10 @@ Model_3DS model_tree;
 Model_3DS model_2b;
 Model_3DS model_laser;
 Model_3DS model_shawerma;
-Model_3DS model_timeMachine;
+Model_3DS model_timeMachine; 
 Model_3DS model_stopwatch;
+Model_3DS model_futureWall;
+
 // Textures
 GLTexture tex_ground;
 GLTexture tex_futurefloor;
@@ -534,6 +536,21 @@ void drawLaser(GLdouble laserPositionX, GLdouble laserPositionY, GLdouble laserP
 	glPopMatrix();
 }
 
+void drawFutureWall(float x, float y, float z) {
+	glPushMatrix();
+	glTranslatef(x, y, z);
+	glScalef(0.5, 0.05, 0.05);
+	model_futureWall.Draw();
+	glPopMatrix();
+}
+
+void drawAllWalls() {
+		drawFutureWall(20, -3.5, 16);
+		//drawFutureWall(-17,0,0);
+		//drawFutureWall(0,0,17);
+		//drawFutureWall(0,0,-17);
+}
+
 
 void drawStopwatch(float x, float y, float z, int flag) {
 	if (flag == 0)
@@ -598,6 +615,9 @@ void DisplayScene1(void) {
 	for (int i = 0; i < 4; i++) {
 		drawStopwatch(stopwatchX[i], stopwatchY[i], stopwatchZ[i], stopwatchFlag[i]);
 	}
+
+	//draw walls
+	drawAllWalls();
 
 	//sky box
 	glPushMatrix();
@@ -704,25 +724,25 @@ void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case 's':
 		playerAngle = 180;
-		if (playerZ > -17) {
+		if (playerZ > -20) {
 			playerZ -= 0.2;
 		}
 		break;
 	case 'd':
 		playerAngle = -90;
-		if (playerX > -17) {
+		if (playerX > -20) {
 			playerX -= 0.2;
 		}
 		break;
 	case 'w':
 		playerAngle = 0;
-		if (playerZ < 17) {
+		if (playerZ < 20) {
 			playerZ += 0.2;
 		}
 		break;
 	case 'a':
 		playerAngle = 90;
-		if (playerX < 17) {
+		if (playerX < 20) {
 			playerX += 0.2;
 		}
 		break;
@@ -786,6 +806,8 @@ void LoadAssets()
 	model_laser.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
 	model_timeMachine.Load("Models/timeMachine/timeMachine.3ds");
 	model_stopwatch.Load("Models/stopwatch/watch.3ds");
+	model_futureWall.Load("Models/futureWall/wall.3ds");
+
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
 	tex_futurefloor.Load("Textures/futurefloor.bmp");
