@@ -12,7 +12,7 @@ int HEIGHT = 480;
 
 
 GLuint tex;
-char title[] = "3D Model Loader Sample";
+char title[] = "food time";
 
 // 3D Projection Options
 GLdouble fovy = 45.0;
