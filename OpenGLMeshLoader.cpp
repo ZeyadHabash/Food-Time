@@ -57,7 +57,11 @@ bool moveLaserleft = false;
 
 bool isThirdPerson = true;
 
-bool scene2 = false; // to check if we are in scene 2 or not
+bool scene2 = true; // to check if we are in scene 2 or not
+
+bool gameOver = false;
+
+bool shawermaCollected = false;
 
 class Vector
 {
@@ -467,43 +471,55 @@ void RenderGround()
 
 
 void checkCollision() {
-
-	//collision with the stopwatch 
-	for (int i = 0; i < 4; i++) {
-		if (playerX >= stopwatchX[i] - 0.5 && playerX <= stopwatchX[i] + 0.5 &&
-			playerZ >= stopwatchZ[i] - 0.5 && playerZ <= stopwatchZ[i] + 0.5)
-			if (stopwatchFlag[i] == 1) {
-				score += 10;
-				stopwatchFlag[i] = 0;
-				PlaySound(TEXT("stopwatch.wav"), NULL, SND_FILENAME | SND_ASYNC);
-			}
-	}
-
-	//collisions with laser beam 
-	if (playerX <= laserPositionX + 8 && playerX >= laserPositionX - 8)
+	if (!scene2)
 	{
-		if ((playerZ <= laserPositionZ + 0.5 && playerZ >= laserPositionZ - 0.5)
-			|| (playerZ <= laserPositionZ2 + 0.5 && playerZ >= laserPositionZ2 - 0.5))
+		//collision with the stopwatch 
+		for (int i = 0; i < 4; i++) {
+			if (playerX >= stopwatchX[i] - 0.5 && playerX <= stopwatchX[i] + 0.5 &&
+				playerZ >= stopwatchZ[i] - 0.5 && playerZ <= stopwatchZ[i] + 0.5)
+				if (stopwatchFlag[i] == 1) {
+					score += 10;
+					stopwatchFlag[i] = 0;
+					PlaySound(TEXT("stopwatch.wav"), NULL, SND_FILENAME | SND_ASYNC);
+				}
+		}
+
+		//collisions with laser beam 
+		if (playerX <= laserPositionX + 8 && playerX >= laserPositionX - 8)
 		{
-			if (score >= 5)
-				score -= 5;
+			if ((playerZ <= laserPositionZ + 0.5 && playerZ >= laserPositionZ - 0.5)
+				|| (playerZ <= laserPositionZ2 + 0.5 && playerZ >= laserPositionZ2 - 0.5))
+			{
+				if (score >= 5)
+					score -= 5;
 
-			PlaySound(TEXT("laser.wav"), NULL, SND_FILENAME | SND_ASYNC);
+				PlaySound(TEXT("laser.wav"), NULL, SND_FILENAME | SND_ASYNC);
 
-			if (playerAngle == 0)
-				playerZ -= 0.2;
-			else
-				playerZ += 0.2;
+				if (playerAngle == 0)
+					playerZ -= 0.2;
+				else
+					playerZ += 0.2;
+
+			}
 
 		}
-
+		//collision with timemachine
+		if (playerZ >= 12.5 && playerX <= -5.2 && playerX >= -10.5) {
+			if (!scene2) {
+				PlaySound(TEXT("timemachine.wav"), NULL, SND_FILENAME | SND_ASYNC);
+				transition = true;
+			}
+		}
 	}
-	//collision with timemachine
-	if (playerZ >= 12.5 && playerX <= -5.2 && playerX >= -10.5) {
-		if (!scene2) {
-			PlaySound(TEXT("timemachine.wav"), NULL, SND_FILENAME | SND_ASYNC);
-			transition = true;
+	else
+	{
+		//collision with shawerma
+		if (playerX <= 10.5 && playerX >= 9.5 && playerZ <= 0.5 && playerZ >= -0.5) {
+			score += 10;
+			//PlaySound(TEXT("shawerma.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			gameOver = true;
 		}
+	
 	}
 }
 
@@ -645,11 +661,14 @@ void DisplayScene2(void) {
 	RenderGround();
 
 	// Draw shawerma Model
-	glPushMatrix();
-	glTranslatef(10, 2, 0);
-	glScalef(0.05, 0.05, 0.05);
-	model_shawerma.Draw();
-	glPopMatrix();
+	if (!shawermaCollected)
+	{
+		glPushMatrix();
+		glTranslatef(10, 2, 0);
+		glScalef(0.05, 0.05, 0.05);
+		model_shawerma.Draw();
+		glPopMatrix();
+	}
 
 	// Draw 2b Model
 	glPushMatrix();
@@ -688,16 +707,38 @@ void DisplayScene2(void) {
 	glFlush();
 }
 
+void DisplayGameEnd(void) {
+	setupCamera();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	glDisable(GL_LIGHTING);
+	char scoreString[20];
+	sprintf_s(scoreString, "Score: %d", score); // format the score as a string
+	print(camera.center.x, camera.center.y, camera.center.z, scoreString);
+	glEnable(GL_LIGHTING);
+	glPopMatrix();
+	glutSwapBuffers();
+	glFlush();
+}
+
 //=======================================================================
 // Display Function
 //=======================================================================
 void Display(void)
 {
-	if (!scene2)
-		DisplayScene1();
+	if (gameOver)
+	{
+		DisplayGameEnd();
+	}
 	else
-		DisplayScene2();
-	
+	{
+		if (!scene2)
+			DisplayScene1();
+		else
+			DisplayScene2();
+
+	}
 }
 
 
@@ -733,6 +774,8 @@ void Keyboard(unsigned char key, int x, int y) {
 		break;
 	}
 	camera.changeView(playerX, playerY, playerZ, playerAngle);
+
+	cout << "playerX: " << playerX << " playerZ: " << playerZ << endl;
 
 
 	//method to check for collisions with collectables/borders
