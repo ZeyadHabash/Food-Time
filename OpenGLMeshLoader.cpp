@@ -516,7 +516,7 @@ void checkCollision() {
 		//collision with shawerma
 		if (playerX <= 10.5 && playerX >= 9.5 && playerZ <= 0.5 && playerZ >= -0.5) {
 			score += 10;
-			//PlaySound(TEXT("shawerma.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			PlaySound(TEXT("shawerma.wav"), NULL, SND_FILENAME | SND_ASYNC);
 			gameOver = true;
 		}
 	
