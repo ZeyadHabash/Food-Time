@@ -81,6 +81,10 @@ bool isThirdPerson = true;
 
 bool scene2 = true; // to check if we are in scene 2 or not
 
+bool gameOver = false;
+
+bool shawermaCollected = false;
+
 class Vector
 {
 public:
@@ -242,7 +246,7 @@ public:
 
 Camera camera;
 float playerX = 0.0;
-float playerY = 0.15;
+float playerY = 0.0;
 float playerZ = 0.0;
 float playerAngle = 0;
 
@@ -266,7 +270,7 @@ Model_3DS model_tree;
 Model_3DS model_2b;
 Model_3DS model_laser;
 Model_3DS model_shawerma;
-Model_3DS model_timeMachine;
+Model_3DS model_timeMachine; 
 Model_3DS model_stopwatch;
 Model_3DS model_tornado;
 Model_3DS model_hourglass;
@@ -274,14 +278,6 @@ Model_3DS model_hourglass;
 GLTexture tex_ground;
 GLTexture tex_futurefloor;
 GLTexture tex_sand;
-GLTexture tex_sandtornado;
-GLTexture tex_smooth;
-GLTexture tex_metal;
-GLTexture tex_sandglass;
-
-
-
-
 
 //=======================================================================
 // Lighting Configuration Function
@@ -587,7 +583,11 @@ void checkCollision() {
 
 
 				}*/
-
+			if (playerX <= 10.5 && playerX >= 9.5 && playerZ <= 0.5 && playerZ >= -0.5) {
+				score += 10;
+				PlaySound(TEXT("shawerma.wav"), NULL, SND_FILENAME | SND_ASYNC);
+				gameOver = true;
+			}
 			
 
 		
@@ -760,25 +760,15 @@ void DisplayScene2(void) {
 	// Draw Ground
 	RenderGround();
 
-	// Draw 2b Model
-	glPushMatrix();
-	
-	//if (colTor1)
-	//{
-	//	glTranslatef(-tornadoPositionX, -tornadoPositionX, -tornadoPositionX);
-	//	glRotatef(playerAngle, 0, 1, 0);
-	//	glTranslatef(tornadoPositionX, tornadoPositionX, tornadoPositionX);
-	//}
-	//if (colTor1) {
-	//	//playerX -= tornadoPositionX;
-	//	//playerY -= tornadoPositionY;
-	//	//playerZ -= tornadoPositionZ;
-	//		//glRotatef(playerAngle, 0, 1, 0);
-	//		//playerX += tornadoPositionX;
-	//		//playerY += tornadoPositionY;
-	//		//playerZ += tornadoPositionZ;
-
-
+	// Draw shawerma Model
+	if (!shawermaCollected)
+	{
+		glPushMatrix();
+		glTranslatef(10, 2, 0);
+		glScalef(0.05, 0.05, 0.05);
+		model_shawerma.Draw();
+		glPopMatrix();
+	}
 
 	//}
 	glTranslatef(playerX, playerY, playerZ);
@@ -837,16 +827,38 @@ void DisplayScene2(void) {
 	glFlush();
 }
 
+void DisplayGameEnd(void) {
+	setupCamera();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	glColor4f(1.0, 1.0, 1.0, 1.0);
+	glDisable(GL_LIGHTING);
+	char scoreString[20];
+	sprintf_s(scoreString, "Score: %d", score); // format the score as a string
+	print(camera.center.x, camera.center.y, camera.center.z, scoreString);
+	glEnable(GL_LIGHTING);
+	glPopMatrix();
+	glutSwapBuffers();
+	glFlush();
+}
+
 //=======================================================================
 // Display Function
 //=======================================================================
 void Display(void)
 {
-	if (!scene2)
-		DisplayScene1();
+	if (gameOver)
+	{
+		DisplayGameEnd();
+	}
 	else
-		DisplayScene2();
+	{
+		if (!scene2)
+			DisplayScene1();
+		else
+			DisplayScene2();
 
+	}
 }
 
 
@@ -855,25 +867,25 @@ void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case 's':
 		playerAngle = 180;
-		if (playerZ > -17) {
+		if (playerZ > -20) {
 			playerZ -= 0.2;
 		}
 		break;
 	case 'd':
 		playerAngle = -90;
-		if (playerX > -17) {
+		if (playerX > -20) {
 			playerX -= 0.2;
 		}
 		break;
 	case 'w':
 		playerAngle = 0;
-		if (playerZ < 17) {
+		if (playerZ < 20) {
 			playerZ += 0.2;
 		}
 		break;
 	case 'a':
 		playerAngle = 90;
-		if (playerX < 17) {
+		if (playerX < 20) {
 			playerX += 0.2;
 		}
 		break;
