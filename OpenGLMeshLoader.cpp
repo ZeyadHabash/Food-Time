@@ -737,6 +737,7 @@ void DisplayScene1(void) {
 	glColor3f(1, 1, 1);
 	char* p0s[20];
 	sprintf((char*)p0s, "Score: %d", score);
+	
 	print(camera.eye.x, 5.6, camera.eye.z, (char*)p0s);
 
 	glutSwapBuffers();
@@ -827,8 +828,10 @@ void DisplayScene2(void) {
 	glColor3f(1, 1, 1);
 	char* p0s[20];
 	sprintf((char*)p0s, "Score: %d", score);
-	//print(playerX, 5.6, playerZ, (char*)p0s);
-	print(camera.center.x+1, camera.center.y + 3.5, camera.center.z+1, (char*)p0s);
+	if(isThirdPerson)
+	print(playerX, 5.6, playerZ, (char*)p0s);
+	else
+	print(camera.eye.x, camera.eye.y + 3.5, camera.eye.z, (char*)p0s);
 
 	glutSwapBuffers();
 	glFlush();
