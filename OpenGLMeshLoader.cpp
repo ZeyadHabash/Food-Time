@@ -1,3 +1,4 @@
+
 #include "TextureBuilder.h"
 #include "Model_3DS.h"
 #include "GLTexture.h"
@@ -15,7 +16,7 @@ int WIDTH = 640;
 int HEIGHT = 480;
 
 int timer = 3;
-int score = 0;
+int score = 50;
 
 float elapsedTime = 0.0f;
 
@@ -43,14 +44,35 @@ GLdouble laserSpeed = 0.1;
 
 
 
-float stopwatchX[4] = {-3, 4, 3, -3};
-float stopwatchY [4] = {3, 3, 3, 3};
-float stopwatchZ [4] = {5, 9, -5, -7};
-int stopwatchFlag[4] = {1, 1, 1, 1};
+float stopwatchX[4] = { -3, 4, 3, -3 };
+float stopwatchY[4] = { 3, 3, 3, 3 };
+float stopwatchZ[4] = { 5, 9, -5, -7 };
+int stopwatchFlag[4] = { 1, 1, 1, 1 };
 
+
+float hourGlassX[4] = { -3, 4, 9, -3 };
+float hourGlassY[4] = { 1, 1, 1, 1 };
+float hourGlassZ[4] = { 5, 9, -5, -7 };
+int hourGlassFlag[4] = { 1, 1, 1, 1 };
+
+
+GLdouble tornadoPositionX = 0, tornadoPositionY = 2, tornadoPositionZ = 8;
+GLdouble tornadoPositionX2 = 0, tornadoPositionY2 = 2, tornadoPositionZ2 = -6;
+GLdouble tornadoPositionX3 = 0, tornadoPositionY3 = 2, tornadoPositionZ3 = 3;
+
+
+GLdouble tornadoDirectionX = 1, tornadoDirectionY = 0, tornadoDirectionZ = 0;
 
 
 GLdouble stopwatchAng = 0;
+GLdouble hourGlassAng = 0;
+GLdouble tornadoAng = 0;
+GLdouble shawermaAng = 0;
+
+bool colTor1 = false;
+bool colTor2 = false;
+bool colTor3 = false;
+
 
 GLdouble timeMachineAng = 0;
 bool moveLaserleft = false;
@@ -250,8 +272,8 @@ Model_3DS model_laser;
 Model_3DS model_shawerma;
 Model_3DS model_timeMachine; 
 Model_3DS model_stopwatch;
-Model_3DS model_futureWall;
-
+Model_3DS model_tornado;
+Model_3DS model_hourglass;
 // Textures
 GLTexture tex_ground;
 GLTexture tex_futurefloor;
@@ -272,13 +294,13 @@ void InitLightSource()
 	// Define Light source 0 ambient light
 	GLfloat ambient[] = { 0.1f, 0.1f, 0.1, 1.0f };
 
-	if(scene2)
+	if (scene2)
 	{
 		ambient[0] = 0.5;
 		ambient[1] = 0.5;
 		ambient[2] = 0.5;
 	}
-	
+
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
 
 	// Define Light source 0 diffuse light
@@ -295,70 +317,70 @@ void InitLightSource()
 
 
 
+	if(!scene2)
+	{
+		// Laser light source (Spotlight)
+		glEnable(GL_LIGHT1);
+
+		GLfloat ambient1[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // Minimal ambient light
+		glLightfv(GL_LIGHT1, GL_AMBIENT, ambient1);
+
+		GLfloat diffuse1[] = { laserColour[0] * 10 , laserColour[1] * 10 , laserColour[2] * 10, 1.0f }; // laser colour
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
+
+		GLfloat specular1[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // White specular light
+		glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
+
+		GLfloat light_position1[] = { laserPositionX + laserOffsetX, laserPositionY + laserOffsetY, laserPositionZ + laserOffsetZ, 1.0f };
+		glLightfv(GL_LIGHT1, GL_POSITION, light_position1);
+
+		GLfloat light_direction1[] = { laserDirectionX, laserDirectionY, laserDirectionZ };
+		glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_direction1);
+
+		// Set the cutoff angle for the spotlight
+		glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, laserCutoff);
+
+		// Set the exponent to control the spotlight falloff
+		glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, laserExponent);
+
+		GLfloat constantAttenuation = 1.0f;
+		GLfloat linearAttenuation = 0.1f;
+		GLfloat quadraticAttenuation = 0.01f;
+
+		glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, constantAttenuation);
+		glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, linearAttenuation);
+		glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
 
 
 
-	// Laser light source (Spotlight)
-	glEnable(GL_LIGHT1);
 
-	GLfloat ambient1[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // Minimal ambient light
-	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient1);
+		glEnable(GL_LIGHT2);
 
-	GLfloat diffuse1[] = { laserColour[0] *10 , laserColour[1] *10 , laserColour[2] * 10, 1.0f}; // laser colour
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
+		glLightfv(GL_LIGHT2, GL_AMBIENT, ambient1);
 
-	GLfloat specular1[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // White specular light
-	glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
+		glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuse1);
 
-	GLfloat light_position1[] = { laserPositionX + laserOffsetX, laserPositionY + laserOffsetY, laserPositionZ + laserOffsetZ, 1.0f };
-	glLightfv(GL_LIGHT1, GL_POSITION, light_position1);
+		glLightfv(GL_LIGHT2, GL_SPECULAR, specular1);
 
-	GLfloat light_direction1[] = { laserDirectionX, laserDirectionY, laserDirectionZ };
-	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_direction1);
+		GLfloat light_position2[] = { laserPositionX2 + laserOffsetX, laserPositionY2 + laserOffsetY, laserPositionZ2 + laserOffsetZ, 1.0f };
+		glLightfv(GL_LIGHT2, GL_POSITION, light_position2);
 
-	// Set the cutoff angle for the spotlight
-	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, laserCutoff);
+		glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light_direction1);
 
-	// Set the exponent to control the spotlight falloff
-	glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, laserExponent);
+		// Set the cutoff angle for the spotlight
+		glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, laserCutoff);
 
-	GLfloat constantAttenuation = 1.0f;
-	GLfloat linearAttenuation = 0.1f;
-	GLfloat quadraticAttenuation = 0.01f;
-
-	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, constantAttenuation);
-	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, linearAttenuation);
-	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+		// Set the exponent to control the spotlight falloff
+		glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, laserExponent);
 
 
 
-
-	glEnable(GL_LIGHT2);
-
-	glLightfv(GL_LIGHT2, GL_AMBIENT, ambient1);
-
-	glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuse1);
-
-	glLightfv(GL_LIGHT2, GL_SPECULAR, specular1);
-
-	GLfloat light_position2[] = { laserPositionX2 + laserOffsetX, laserPositionY2 + laserOffsetY, laserPositionZ2 + laserOffsetZ, 1.0f };
-	glLightfv(GL_LIGHT2, GL_POSITION, light_position2);
-
-	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, light_direction1);
-
-	// Set the cutoff angle for the spotlight
-	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, laserCutoff);
-
-	// Set the exponent to control the spotlight falloff
-	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, laserExponent);
-
-	
-
-	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, constantAttenuation);
-	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, linearAttenuation);
-	glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
+		glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, constantAttenuation);
+		glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, linearAttenuation);
+		glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, quadraticAttenuation);
 
 
+	}
 
 
 }
@@ -396,22 +418,22 @@ void myInit(void)
 	glLoadIdentity();
 
 	gluPerspective(fovy, aspectRatio, zNear, zFar);
-	//*******************************************************************************************//
+	//*******************************//
 	// fovy:			Angle between the bottom and top of the projectors, in degrees.			 //
 	// aspectRatio:		Ratio of width to height of the clipping plane.							 //
 	// zNear and zFar:	Specify the front and back clipping planes distances from camera.		 //
-	//*******************************************************************************************//
+	//*******************************//
 
 	glMatrixMode(GL_MODELVIEW);
 
 	glLoadIdentity();
 
 	gluLookAt(Eye.x, Eye.y, Eye.z, At.x, At.y, At.z, Up.x, Up.y, Up.z);
-	//*******************************************************************************************//
+	//*******************************//
 	// EYE (ex, ey, ez): defines the location of the camera.									 //
 	// AT (ax, ay, az):	 denotes the direction where the camera is aiming at.					 //
 	// UP (ux, uy, uz):  denotes the upward orientation of the camera.							 //
-	//*******************************************************************************************//
+	//*******************************//
 
 	InitLightSource();
 
@@ -471,8 +493,7 @@ void RenderGround()
 
 
 void checkCollision() {
-	if (!scene2)
-	{
+	if (!scene2) {
 		//collision with the stopwatch 
 		for (int i = 0; i < 4; i++) {
 			if (playerX >= stopwatchX[i] - 0.5 && playerX <= stopwatchX[i] + 0.5 &&
@@ -511,19 +532,69 @@ void checkCollision() {
 			}
 		}
 	}
-	else
-	{
-		//collision with shawerma
-		if (playerX <= 10.5 && playerX >= 9.5 && playerZ <= 0.5 && playerZ >= -0.5) {
-			score += 10;
-			PlaySound(TEXT("shawerma.wav"), NULL, SND_FILENAME | SND_ASYNC);
-			gameOver = true;
+	else {
+		//collision with the hourglass 
+		for (int i = 0; i < 4; i++) {
+			if (playerX >= hourGlassX[i] - 0.5 && playerX <= hourGlassX[i] + 0.5 &&
+				playerZ >= hourGlassZ[i] - 0.5 && playerZ <= hourGlassZ[i] + 0.5)
+				if (hourGlassFlag[i] == 1) {
+					score += 10;
+					hourGlassFlag[i] = 0;
+					PlaySound(TEXT("stopwatch.wav"), NULL, SND_FILENAME | SND_ASYNC);
+				}
 		}
-	
+
+		colTor1 = false;
+		colTor2 = false;
+		colTor3 = false;
+
+		//collisions with tornado
+		bool torRotate = false;
+		if ((playerZ <= tornadoPositionZ + 0.5 && playerZ >= tornadoPositionZ - 0.5
+			&& playerX <= tornadoPositionX + 0.5 && playerX >= tornadoPositionX - 0.5))
+			colTor1 = true;
+		else if ((playerZ <= tornadoPositionZ2 + 0.5 && playerZ >= tornadoPositionZ2 - 0.5
+			&& playerX <= tornadoPositionX2 + 0.5 && playerX >= tornadoPositionX2 - 0.5))
+			colTor2 = true;
+		else if
+			((playerZ <= tornadoPositionZ3 + 0.5 && playerZ >= tornadoPositionZ3 - 0.5
+				&& playerX <= tornadoPositionX3 + 0.5 && playerX >= tornadoPositionX3 - 0.5))
+			colTor3 = true;
+
+			//cout << "tornado" << endl;
+			if (colTor1 || colTor2 || colTor3)
+			{
+				
+				score -= 5;
+				torRotate = true;
+			}
+
+
+			if (torRotate)
+				playerAngle += 0.2;
+				/*if (playerAngle == 0) {
+					playerAngle += 0.3;
+					playerZ -= 0.2;
+
+				}
+				else {
+					playerAngle += 0.3;
+					playerZ += 0.2;
+
+
+				}*/
+			if (playerX <= 10.5 && playerX >= 9.5 && playerZ <= 0.5 && playerZ >= -0.5) {
+				score += 10;
+				PlaySound(TEXT("shawerma.wav"), NULL, SND_FILENAME | SND_ASYNC);
+				gameOver = true;
+			}
+			
+
+		
 	}
 }
-
-void print(float x, float y, float z,  char* string)
+//scene 1 methods
+void print(float x, float y, float z, char* string)
 {
 	int len, i;
 
@@ -551,23 +622,19 @@ void drawLaser(GLdouble laserPositionX, GLdouble laserPositionY, GLdouble laserP
 	glPopAttrib(); // Restore the color state
 	glPopMatrix();
 }
-
-
 void drawStopwatch(float x, float y, float z, int flag) {
 	if (flag == 0)
 		return;
-	
-		glPushMatrix();
-		glTranslatef(x, y, z);
-		glRotatef(stopwatchAng, 0, 1, 0);
-		glScalef(0.02, 0.02, 0.02);
-		model_stopwatch.Draw();
-		glPopMatrix();
-	
+
+	glPushMatrix();
+	glTranslatef(x, y, z);
+	glRotatef(stopwatchAng, 0, 1, 0);
+	glScalef(0.02, 0.02, 0.02);
+	model_stopwatch.Draw();
+	glPopMatrix();
+
 
 }
-
-
 void drawTimemachine() {
 	glPushMatrix();
 	glTranslatef(-8, 0.5, 16);
@@ -577,6 +644,38 @@ void drawTimemachine() {
 	glPopMatrix();
 
 }
+
+//scene 2 methods
+
+void drawTornado(GLdouble tornadoPositionX, GLdouble tornadoPositionY, GLdouble tornadoPositionZ)
+{
+	glPushMatrix();
+	//glPushAttrib(GL_CURRENT_BIT); // Save the current color state
+	// Enable color material
+	//glColor3f(laserColour[0], laserColour[1], laserColour[2]);
+	glTranslatef(tornadoPositionX, tornadoPositionY, tornadoPositionZ);
+	glRotatef(tornadoAng, 0, 1, 0);
+
+	glScalef(0.02, 0.02, 0.02);
+
+	model_tornado.Draw();
+	//glPopAttrib(); // Restore the color state
+	glPopMatrix();
+}
+void drawHourGlass(float x, float y, float z, int flag) {
+	if (flag == 0)
+		return;
+
+	glPushMatrix();
+	glTranslatef(x, y, z);
+	glRotatef(hourGlassAng, 0, 1, 0);
+	glScalef(0.02, 0.02, 0.02);
+	model_hourglass.Draw();
+	glPopMatrix();
+
+
+}
+
 void DisplayScene1(void) {
 	setupCamera();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -638,7 +737,8 @@ void DisplayScene1(void) {
 	glColor3f(1, 1, 1);
 	char* p0s[20];
 	sprintf((char*)p0s, "Score: %d", score);
-	print(playerX, 5.6, playerZ, (char*)p0s);
+	
+	print(camera.eye.x, 5.6, camera.eye.z, (char*)p0s);
 
 	glutSwapBuffers();
 	glFlush();
@@ -670,8 +770,7 @@ void DisplayScene2(void) {
 		glPopMatrix();
 	}
 
-	// Draw 2b Model
-	glPushMatrix();
+	//}
 	glTranslatef(playerX, playerY, playerZ);
 	glRotatef(playerAngle, 0, 1, 0);
 	glScalef(0.05, 0.05, 0.05);
@@ -679,7 +778,25 @@ void DisplayScene2(void) {
 	glPopMatrix();
 
 
+	// Draw tornado Model
+	drawTornado(tornadoPositionX, tornadoPositionY, tornadoPositionZ);
+	drawTornado(tornadoPositionX2, tornadoPositionY2, tornadoPositionZ2);
+	drawTornado(tornadoPositionX3, tornadoPositionY3, tornadoPositionZ3);
 
+
+
+	// Draw shawerma Model
+	glPushMatrix();
+	glTranslatef(10, 2, 0);
+	glRotatef(shawermaAng, 0, 1, 0);
+	glScalef(0.05, 0.05, 0.05);
+	model_shawerma.Draw();
+	glPopMatrix();
+
+	//Draw Hour glass
+	for (int i = 0; i < 4; i++) {
+		drawHourGlass(hourGlassX[i], hourGlassY[i], hourGlassZ[i], hourGlassFlag[i]);
+	}
 
 	//sky box
 	glPushMatrix();
@@ -701,7 +818,10 @@ void DisplayScene2(void) {
 	glColor3f(1, 1, 1);
 	char* p0s[20];
 	sprintf((char*)p0s, "Score: %d", score);
+	if(isThirdPerson)
 	print(playerX, 5.6, playerZ, (char*)p0s);
+	else
+	print(camera.eye.x, camera.eye.y + 3.5, camera.eye.z, (char*)p0s);
 
 	glutSwapBuffers();
 	glFlush();
@@ -775,11 +895,13 @@ void Keyboard(unsigned char key, int x, int y) {
 	}
 	camera.changeView(playerX, playerY, playerZ, playerAngle);
 
-	cout << "playerX: " << playerX << " playerZ: " << playerZ << endl;
+	cout << "playerX" << playerX << endl;
+	cout << "playerY" << playerY << endl;
+	cout << "playerZ" << playerZ << endl;
 
 
 	//method to check for collisions with collectables/borders
-	checkCollision(); 
+	checkCollision();
 	glutPostRedisplay();
 }
 
@@ -831,7 +953,8 @@ void LoadAssets()
 	model_laser.Load("Models/futuristic-sci-fi-laser-barrier/source/laserBarrier.3DS");
 	model_timeMachine.Load("Models/timeMachine/timeMachine.3ds");
 	model_stopwatch.Load("Models/stopwatch/watch.3ds");
-	model_futureWall.Load("Models/futureWall/wall.3ds");
+	model_tornado.Load("Models/tornado/tornado.3ds");
+	model_hourglass.Load("Models/hourglass/hourglass.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
@@ -842,8 +965,8 @@ void LoadAssets()
 
 void anim()
 {
-	if(!scene2)
-	//laser animation
+	if (!scene2)
+		//laser animation
 	{
 		if (moveLaserleft)
 		{
@@ -898,6 +1021,20 @@ void anim()
 
 		//timemachine animation
 		timeMachineAng += 0.1;
+
+	}
+	else {
+		//shawerma animation
+		shawermaAng += 0.1;
+
+		// hourglass animation
+		hourGlassAng += 0.1;
+
+		// tornado animation
+		tornadoAng += 0.1;
+
+		if (colTor1 || colTor2 || colTor3)
+			playerAngle += 0.5;
 	}
 
 	glutPostRedisplay();
@@ -909,7 +1046,7 @@ void anim()
 void main(int argc, char** argv)
 {
 
-	
+
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
